@@ -53,7 +53,10 @@ describe('reduce2', () => {
     });
 
     it('concatenates strings', () => {
-      const result = ['a', 'b', 'c'].reduce2((acc, val) => acc + val, '');
+      const result = ['a', 'b', 'c'].reduce2(
+        (acc, val) => acc + val,
+        ''
+      );
       expect(result).toBe('abc');
     });
   });
@@ -66,22 +69,28 @@ describe('reduce2', () => {
 
     it('handles single-element array with initialValue', () => {
       const calls = [];
-      const result = [5].reduce2((acc, val, idx) => {
-        calls.push([acc, val, idx]);
-        return acc + val;
-      }, 10);
+      const result = [5].reduce2(
+        (acc, val, idx) => {
+          calls.push([acc, val, idx]);
+          return acc + val;
+        },
+        10
+      );
       expect(result).toBe(15);
       expect(calls.length).toBe(1);
       expect(calls[0]).toEqual([10, 5, 0]);
     });
 
-    it('skips undefined elements (instead of sparse array)', () => {
+    it('handles undefined elements instead of sparse array', () => {
       const arr = [1, undefined, 3];
       const calls = [];
-      const result = arr.reduce2((acc, val, idx) => {
-        calls.push([val, idx]);
-        return acc + (val || 0);
-      }, 0);
+      const result = arr.reduce2(
+        (acc, val, idx) => {
+          calls.push([val, idx]);
+          return acc + (val || 0);
+        },
+        0
+      );
 
       expect(result).toBe(4);
       expect(calls).toEqual([[1, 0], [undefined, 1], [3, 2]]);
@@ -89,10 +98,13 @@ describe('reduce2', () => {
 
     it('uses length snapshot, ignores pushed values', () => {
       const arr = [1, 2];
-      const result = arr.reduce2((acc, val, idx, src) => {
-        if (idx === 0) src.push(99);
-        return acc + val;
-      }, 0);
+      const result = arr.reduce2(
+        (acc, val, idx, src) => {
+          if (idx === 0) src.push(99);
+          return acc + val;
+        },
+        0
+      );
 
       expect(result).toBe(3);
       expect(arr).toEqual([1, 2, 99]);
@@ -101,7 +113,10 @@ describe('reduce2', () => {
     it('ignores prototype numeric properties', () => {
       Array.prototype[2] = 100; // eslint-disable-line
       const arr = [1, 2];
-      const result = arr.reduce2((acc, val) => acc + val, 0);
+      const result = arr.reduce2(
+        (acc, val) => acc + val,
+        0
+      );
       expect(result).toBe(3);
       delete Array.prototype[2];
     });
@@ -114,7 +129,10 @@ describe('reduce2', () => {
 
     it('handles undefined and null elements as values', () => {
       const arr = [undefined, null, 1];
-      const result = arr.reduce2((acc, val) => acc.concat([val]), []);
+      const result = arr.reduce2(
+        (acc, val) => acc.concat([val]),
+        []
+      );
       expect(result).toEqual([undefined, null, 1]);
     });
 
@@ -147,12 +165,15 @@ describe('reduce2', () => {
 
     it('matches native reduce for numbers without initialValue (non-empty arrays)', () => {
       fc.assert(
-        fc.property(fc.array(fc.integer(), { minLength: 1 }), (arr) => {
-          const cb = (acc, val) => acc + val;
-          const native = arr.reduce(cb);
-          const custom = arr.reduce2(cb);
-          expect(custom).toBe(native);
-        })
+        fc.property(
+          fc.array(fc.integer(), { minLength: 1 }),
+          (arr) => {
+            const cb = (acc, val) => acc + val;
+            const native = arr.reduce(cb);
+            const custom = arr.reduce2(cb);
+            expect(custom).toBe(native);
+          }
+        )
       );
     });
 
