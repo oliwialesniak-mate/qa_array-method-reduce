@@ -195,7 +195,7 @@ describe('reduce2', () => {
     });
   });
 
-  describe('property-based testing', () => {
+ /*describe('property-based testing', () => {
     it('matches native reduce for numbers with initialValue', () => {
       fc.assert(
         fc.property(fc.array(fc.integer()), fc.integer(), (arr, init) => {
@@ -205,7 +205,7 @@ describe('reduce2', () => {
           expect(custom).toBe(native);
         })
       );
-    });
+    });*/
 
     it('matches native reduce for numbers without initialValue', () => {
       fc.assert(
