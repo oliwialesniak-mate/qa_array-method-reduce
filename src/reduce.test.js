@@ -1,10 +1,7 @@
-'use strict'
-
 const { reduce } = require("./reduce");
 
 describe("reduce2", () => {
   beforeAll(() => {
-    // attach our custom reduce implementation
     Array.prototype.reduce2 = reduce; // eslint-disable-line
   });
 
@@ -12,57 +9,127 @@ describe("reduce2", () => {
     delete Array.prototype.reduce2;
   });
 
-  it("sums an array with an initial value", () => {
-    const result = [1, 2, 3, 4].reduce2((acc, val) => acc + val, 0);
-    expect(result).toBe(10);
+  describe("basic behavior", () => {
+    it("sums with initial value, checks first callback args", () => {
+      const calls = [];
+      const result = [1, 2, 3].reduce2((acc, curr, idx, arr) => {
+        calls.push([acc, curr, idx, arr]);
+        return acc + curr;
+      }, 0);
+
+      expect(result).toBe(6);
+      expect(calls.length).toBe(3);
+      expect(calls[0][0]).toBe(0); // acc === initialValue
+      expect(calls[0][1]).toBe(1); // curr === first element
+      expect(calls[0][2]).toBe(0); // index === 0
+    });
+
+    it("sums without initial value, checks first callback args", () => {
+      const calls = [];
+      const result = [1, 2, 3].reduce2((acc, curr, idx, arr) => {
+        calls.push([acc, curr, idx, arr]);
+        return acc + curr;
+      });
+
+      expect(result).toBe(6);
+      expect(calls.length).toBe(2);
+      expect(calls[0][0]).toBe(1); // acc === first element
+      expect(calls[0][1]).toBe(2); // curr === second element
+      expect(calls[0][2]).toBe(1); // index === 1
+    });
+
+    it("returns initial value on empty array with initialValue and never calls callback", () => {
+      const cb = jest.fn();
+      const result = [].reduce2(cb, 42);
+      expect(result).toBe(42);
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it("throws TypeError on empty array without initialValue", () => {
+      expect(() => [].reduce2((a, b) => a + b)).toThrow(TypeError);
+    });
+
+    it("concatenates strings", () => {
+      const result = ["a", "b", "c"].reduce2((acc, val) => acc + val, "");
+      expect(result).toBe("abc");
+    });
   });
 
-  it("sums an array without an initial value", () => {
-    const result = [1, 2, 3, 4].reduce2((acc, val) => acc + val);
-    expect(result).toBe(10);
-  });
+  describe("edge cases", () => {
+    it("handles single-element array without initialValue", () => {
+      const result = [5].reduce2((acc, val) => acc + val);
+      expect(result).toBe(5);
+    });
 
-  it("concatenates strings", () => {
-    const result = ["a", "b", "c"].reduce2((acc, val) => acc + val, "");
-    expect(result).toBe("abc");
-  });
+    it("handles single-element array with initialValue", () => {
+      const calls = [];
+      const result = [5].reduce2((acc, val, idx) => {
+        calls.push([acc, val, idx]);
+        return acc + val;
+      }, 10);
+      expect(result).toBe(15);
+      expect(calls.length).toBe(1);
+      expect(calls[0]).toEqual([10, 5, 0]);
+    });
 
-  it("builds a frequency map", () => {
-    const result = ["a", "b", "a", "c", "b"].reduce2((acc, val) => {
-      acc[val] = (acc[val] || 0) + 1;
-      return acc;
-    }, {});
-    expect(result).toEqual({ a: 2, b: 2, c: 1 });
-  });
+    it("skips holes in sparse arrays", () => {
+      const arr = [1, , 3]; // hole at index 1
+      const calls = [];
+      const result = arr.reduce2((acc, val, idx) => {
+        calls.push([val, idx]);
+        return acc + (val || 0);
+      }, 0);
 
-  it("provides index and array arguments to callback", () => {
-    const arr = [10, 20, 30];
-    const calls = [];
-    arr.reduce2((acc, val, idx, src) => {
-      calls.push([val, idx, src]);
-      return acc + val;
-    }, 0);
+      expect(result).toBe(4);
+      expect(calls).toEqual([[1, 0], [3, 2]]);
+    });
 
-    expect(calls[0][1]).toBe(0);
-    expect(calls[1][1]).toBe(1);
-    expect(calls[2][1]).toBe(2);
-    expect(calls[0][2]).toBe(arr);
-  });
+    it("uses length snapshot, ignores pushed values", () => {
+      const arr = [1, 2];
+      const result = arr.reduce2((acc, val, idx, src) => {
+        if (idx === 0) src.push(99);
+        return acc + val;
+      }, 0);
 
-  it("throws on empty array without initial value", () => {
-    expect(() => [].reduce2((acc, val) => acc + val)).toThrow();
-  });
+      expect(result).toBe(3);
+      expect(arr).toEqual([1, 2, 99]); // array mutated but not traversed
+    });
 
-  it("returns the initial value on empty array with initial value", () => {
-    const result = [].reduce2((acc, val) => acc + val, 42);
-    expect(result).toBe(42);
-  });
+    it("ignores prototype numeric properties", () => {
+      Array.prototype[2] = 100; // eslint-disable-line
+      const arr = [1, 2];
+      const result = arr.reduce2((acc, val) => acc + val, 0);
+      expect(result).toBe(3);
+      delete Array.prototype[2];
+    });
 
-it("flattens an array of arrays", () => {
-  const result = [[1, 2], [3, 4], [5]].reduce2(
-    (acc, val) => acc.concat(val),
-    []
-  );
-  expect(result).toEqual([1, 2, 3, 4, 5]);
+    it("does not mutate input array", () => {
+      const arr = [1, 2, 3];
+      arr.reduce2((acc, val) => acc + val, 0);
+      expect(arr).toEqual([1, 2, 3]);
+    });
+
+    it("handles undefined and null elements as values", () => {
+      const arr = [undefined, null, 1];
+      const result = arr.reduce2(
+        (acc, val) => acc.concat([val]),
+        []
+      );
+      expect(result).toEqual([undefined, null, 1]);
+    });
+
+    it("propagates errors thrown in callback", () => {
+      expect(() =>
+        [1, 2].reduce2(() => {
+          throw new Error("boom");
+        }, 0)
+      ).toThrow("boom");
+    });
+
+    it("throws TypeError when called on null/undefined", () => {
+      const cb = (a, b) => a + b;
+      expect(() => reduce.call(null, cb, 0)).toThrow(TypeError);
+      expect(() => reduce.call(undefined, cb, 0)).toThrow(TypeError);
+    });
   });
 });
