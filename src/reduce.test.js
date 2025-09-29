@@ -58,8 +58,11 @@ describe("reduce2", () => {
     expect(result).toBe(42);
   });
 
-  it("flattens an array of arrays", () => {
-    const result = [[1, 2], [3, 4], [5]].reduce2((acc, val) => acc.concat(val), []);
-    expect(result).toEqual([1, 2, 3, 4, 5]);
+it("flattens an array of arrays", () => {
+  const result = [[1, 2], [3, 4], [5]].reduce2(
+    (acc, val) => acc.concat(val),
+    []
+  );
+  expect(result).toEqual([1, 2, 3, 4, 5]);
   });
 });
