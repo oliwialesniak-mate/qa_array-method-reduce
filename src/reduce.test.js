@@ -50,12 +50,15 @@ describe('reduce2', () => {
       expect(calls[0][3]).toBe(original);
     });
 
-    it('returns initial value on empty array and never calls callback', () => {
-      const cb = jest.fn();
-      const result = [].reduce2(cb, 42);
-      expect(result).toBe(42);
-      expect(cb).not.toHaveBeenCalled();
-    });
+    it(
+      'returns initial value on empty array and never calls callback',
+      () => {
+        const cb = jest.fn();
+        const result = [].reduce2(cb, 42);
+        expect(result).toBe(42);
+        expect(cb).not.toHaveBeenCalled();
+      }
+    );
 
     it('throws TypeError on empty array without initialValue', () => {
       expect(() => [].reduce2((a, b) => a + b)).toThrow(TypeError);
@@ -84,26 +87,32 @@ describe('reduce2', () => {
   });
 
   describe('edge cases', () => {
-    it('single-element array without initialValue does not call callback', () => {
-      const cb = jest.fn();
-      const result = [5].reduce2(cb);
-      expect(result).toBe(5);
-      expect(cb).not.toHaveBeenCalled();
-    });
+    it(
+      'single-element array without initialValue does not call callback',
+      () => {
+        const cb = jest.fn();
+        const result = [5].reduce2(cb);
+        expect(result).toBe(5);
+        expect(cb).not.toHaveBeenCalled();
+      }
+    );
 
-    it('single-element array with initialValue calls callback once', () => {
-      const calls = [];
-      const result = [5].reduce2(
-        (acc, val, idx, arr) => {
-          calls.push([acc, val, idx, arr]);
-          return acc + val;
-        },
-        10
-      );
-      expect(result).toBe(15);
-      expect(calls.length).toBe(1);
-      expect(calls[0]).toEqual([10, 5, 0, [5]]);
-    });
+    it(
+      'single-element array with initialValue calls callback once',
+      () => {
+        const calls = [];
+        const result = [5].reduce2(
+          (acc, val, idx, arr) => {
+            calls.push([acc, val, idx, arr]);
+            return acc + val;
+          },
+          10
+        );
+        expect(result).toBe(15);
+        expect(calls.length).toBe(1);
+        expect(calls[0]).toEqual([10, 5, 0, [5]]);
+      }
+    );
 
     it('handles undefined elements and validates callback array', () => {
       const arr = [1, undefined, 3];
@@ -173,7 +182,9 @@ describe('reduce2', () => {
 
     it('propagates errors from callback', () => {
       expect(() =>
-        [1, 2].reduce2(() => { throw new Error('boom'); }, 0)
+        [1, 2].reduce2(() => {
+          throw new Error('boom');
+        }, 0)
       ).toThrow('boom');
     });
 
